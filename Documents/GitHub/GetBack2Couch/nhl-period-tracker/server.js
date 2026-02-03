@@ -57,10 +57,10 @@ const server = http.createServer((req, res) => {
     }
 
     // Serve static files
-    let filePath = '.' + req.url;
-    if (filePath === './') {
-        filePath = './index.html';
-    }
+    let cleanUrl = req.url === '/' ? '/index.html' : req.url;
+    // Remove query strings if any
+    cleanUrl = cleanUrl.split('?')[0];
+    let filePath = path.join(__dirname, cleanUrl);
 
     const extname = path.extname(filePath);
     const contentType = MIME_TYPES[extname] || 'application/octet-stream';

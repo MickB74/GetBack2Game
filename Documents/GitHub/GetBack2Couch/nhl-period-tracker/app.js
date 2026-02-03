@@ -66,13 +66,16 @@ function getPeriodOrdinal(number, sport = 'NHL') {
 }
 
 // Logic: Determine Display Status for NHL Game
+// Logic: Determine Display Status for NHL Game
 function getNHLStatusDisplay(game) {
     const state = game.gameState;
 
     if (state === 'FUT' || state === 'PRE') {
+        const startTime = new Date(game.startTimeUTC).getTime();
         return {
             class: 'status-future',
-            text: `Starts at ${formatTime(game.startTimeUTC)}`
+            text: `<span class="future-timer" data-target-time="${game.startTimeUTC}">Starts in ...</span>`,
+            detail: `Starts at ${formatTime(game.startTimeUTC)}`
         };
     }
 
@@ -90,22 +93,27 @@ function getNHLStatusDisplay(game) {
 
         // Active play
         if (game.clock) {
-            const period = getPeriodOrdinal(game.periodDescriptor.number);
+            const periodNum = game.periodDescriptor.number;
+            const periodStr = getPeriodOrdinal(periodNum);
+            const isOT = periodNum > 3;
             const seconds = game.clock.secondsRemaining;
             const timeHtml = `<span class="live-timer" data-seconds="${seconds}">${formatMMSS(seconds)}</span>`;
 
             return {
                 class: 'status-live',
-                text: `P${game.periodDescriptor.number} - ${timeHtml}`,
-                detail: `Playing ${period} Period`
+                text: `${isOT ? 'OT' : 'P' + periodNum} - ${timeHtml}`,
+                detail: isOT ? `Playing Overtime` : `Playing ${periodStr} Period`
             };
         }
     }
 
     if (state === 'FINAL' || state === 'OFF') {
+        let text = 'FINAL';
+        if (game.gameOutcome && game.gameOutcome.lastPeriodType === 'OT') text += ' (OT)';
+        if (game.gameOutcome && game.gameOutcome.lastPeriodType === 'SO') text += ' (SO)';
         return {
             class: 'status-future',
-            text: 'FINAL'
+            text: text
         };
     }
 
@@ -249,8 +257,19 @@ function renderGames(nhlGames, nbaGames) {
     });
 }
 
+// Helper: Format Milliseconds to HH:MM:SS
+function formatCountdown(ms) {
+    if (ms < 0) return 'Starting...';
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h}h ${m}m ${s}s`;
+}
+
 // Timer logic
 function tick() {
+    // Live game clocks (decrement seconds)
     const timers = document.querySelectorAll('.live-timer');
     timers.forEach(timer => {
         let seconds = parseInt(timer.dataset.seconds, 10);
@@ -259,6 +278,15 @@ function tick() {
             timer.dataset.seconds = seconds;
             timer.textContent = formatMMSS(seconds);
         }
+    });
+
+    // Future game countdowns (calculate from target time)
+    const futureTimers = document.querySelectorAll('.future-timer');
+    const now = new Date();
+    futureTimers.forEach(timer => {
+        const targetTime = new Date(timer.dataset.targetTime);
+        const diff = targetTime - now;
+        timer.textContent = formatCountdown(diff);
     });
 }
 
