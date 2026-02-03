@@ -1,0 +1,13 @@
+{
+  "name": "nhl-period-tracker",
+  "version": "1.0.0",
+  "description": "Real-time NHL and NBA period tracker",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
