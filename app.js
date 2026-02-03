@@ -225,36 +225,44 @@ function createGameCard(game) {
 }
 
 function renderGames(nhlGames, nbaGames) {
-    const container = document.getElementById('games-container');
-    container.innerHTML = '';
+    const nhlContainer = document.getElementById('nhl-games');
+    const nbaContainer = document.getElementById('nba-games');
 
-    const allGames = [...nhlGames, ...nbaGames];
+    // Clear both containers
+    if (nhlContainer) nhlContainer.innerHTML = '';
+    if (nbaContainer) nbaContainer.innerHTML = '';
 
-    if (allGames.length === 0) {
-        container.innerHTML = '<div class="loading">No games scheduled for today.</div>';
-        return;
-    }
+    const sortGames = (games) => {
+        return games.sort((a, b) => {
+            const getRank = (g) => {
+                // Normalize status: 0=Live, 1=Future, 2=Final
+                if (g.sport === 'NBA') {
+                    if (g.gameStatus === 2) return 0;
+                    if (g.gameStatus === 1) return 1;
+                    return 2;
+                } else {
+                    if (g.gameState === 'LIVE' || g.gameState === 'CRIT') return 0;
+                    if (g.gameState === 'FUT' || g.gameState === 'PRE') return 1;
+                    return 2;
+                }
+            };
+            return getRank(a) - getRank(b);
+        });
+    };
 
-    // Sort: Live first, then Future, then Final
-    const sortedGames = allGames.sort((a, b) => {
-        const getScore = (g) => {
-            // Normalize status to 0 (Live), 1 (Future), 2 (Final)
-            if (g.sport === 'NBA') {
-                if (g.gameStatus === 2) return 0;
-                if (g.gameStatus === 1) return 1;
-                return 2;
-            } else {
-                if (g.gameState === 'LIVE' || g.gameState === 'CRIT') return 0;
-                if (g.gameState === 'FUT' || g.gameState === 'PRE') return 1;
-                return 2;
-            }
-        };
-        return getScore(a) - getScore(b);
-    });
+    const renderList = (games, container, emptyMsg) => {
+        if (!container) return;
+        if (games.length === 0) {
+            container.innerHTML = `<div class="loading">${emptyMsg}</div>`;
+            return;
+        }
+        sortGames(games).forEach(game => {
+            container.appendChild(createGameCard(game));
+        });
+    };
 
-    sortedGames.forEach(game => {
-        container.appendChild(createGameCard(game));
-    });
+    renderList(nhlGames, nhlContainer, 'No NHL games today');
+    renderList(nbaGames, nbaContainer, 'No NBA games today');
 }
 
 // Helper: Format Milliseconds to HH:MM:SS
@@ -290,6 +298,22 @@ function tick() {
     });
 }
 
+// Tab Switching Logic
+document.querySelectorAll('.tab-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        // Remove active class from all buttons and containers
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.games-container').forEach(con => con.classList.remove('active-content'));
+
+        // Add active class to clicked button
+        button.classList.add('active');
+
+        // Show corresponding container
+        const tabId = button.dataset.tab; // 'nhl' or 'nba'
+        document.getElementById(`${tabId}-games`).classList.add('active-content');
+    });
+});
+
 async function update() {
     const [nhlGames, nbaGames] = await Promise.all([fetchNHLGames(), fetchNBAGames()]);
     renderGames(nhlGames, nbaGames);
@@ -297,9 +321,7 @@ async function update() {
 
 // Initial load
 update();
-
-// Local tick every second
-setInterval(tick, 1000);
-
-// Data refresh every 10 seconds
+// Update every 10 seconds
 setInterval(update, 10000);
+// Update timers every second
+setInterval(tick, 1000);

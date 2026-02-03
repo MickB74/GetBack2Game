@@ -8,15 +8,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>NHL Period Tracker</h1>
-    </header>
-    <main>
-        <div id="games-container" class="games-grid">
-            <!-- Games will be injected here by JS -->
-            <div class="loading">Loading live scores...</div>
+    <div class="container">
+        <header>
+            <h1>Scoreboard</h1>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="nhl">NHL</button>
+                <button class="tab-btn" data-tab="nba">NBA</button>
+            </div>
+        </header>
+        
+        <div id="nhl-games" class="games-container active-content">
+            <!-- NHL games will be rendered here -->
+            <div class="loading">Loading NHL games...</div>
         </div>
-    </main>
+
+        <div id="nba-games" class="games-container">
+            <!-- NBA games will be rendered here -->
+            <div class="loading">Loading NBA games...</div>
+        </div>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>
