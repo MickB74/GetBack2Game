@@ -232,6 +232,110 @@ h1 {
     text-decoration: underline;
 }
 
+/* Comment Preview Styles */
+.comment-preview {
+    background: #1a1a1a;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #333;
+}
+
+.preview-header {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.preview-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.85em;
+}
+
+.preview-comment {
+    background: #252525;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-left: 2px solid #444;
+}
+
+.preview-comment:last-child {
+    margin-bottom: 0;
+}
+
+.comment-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: 0.8em;
+}
+
+.comment-preview-body {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+/* Manual Thread Input Styles */
+.manual-thread-input {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.thread-url-input {
+    flex: 1;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: 0.85em;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.thread-url-input:focus {
+    outline: none;
+    border-color: #FF4500;
+}
+
+.thread-url-input::placeholder {
+    color: #666;
+}
+
+.load-thread-btn {
+    background: #2d2d2d;
+    border: 1px solid #444;
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85em;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.load-thread-btn:hover:not(:disabled) {
+    background: #3d3d3d;
+    border-color: #FF4500;
+    color: #FF4500;
+}
+
+.load-thread-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
 .game-card:hover {
     transform: translateY(-2px);
     border-color: #444;

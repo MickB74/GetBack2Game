@@ -325,16 +325,29 @@ function createGameCard(game) {
             <div class="${status.class}">${status.text}</div>
             ${status.detail ? `<div class="clock-detail">${status.detail}</div>` : ''}
         </div>
-        <button class="reddit-toggle-btn">Show Reddit Comments</button>
+        <div class="comment-preview" style="display: none;">
+            <div class="preview-loading">Loading preview...</div>
+        </div>
+        <div class="manual-thread-input">
+            <input type="text" placeholder="Paste Reddit thread URL..." class="thread-url-input">
+            <button class="load-thread-btn">Load</button>
+        </div>
+        <button class="reddit-toggle-btn">Show All Comments</button>
         <div class="reddit-container" style="display: none;">
             <div class="reddit-loading">Loading comments...</div>
         </div>
     `;
 
+
     // Add Reddit toggle functionality
     const toggleBtn = card.querySelector('.reddit-toggle-btn');
     const redditContainer = card.querySelector('.reddit-container');
+    const previewContainer = card.querySelector('.comment-preview');
+    const threadUrlInput = card.querySelector('.thread-url-input');
+    const loadThreadBtn = card.querySelector('.load-thread-btn');
     let commentsLoaded = false;
+    let currentThread = null;
+
 
     toggleBtn.addEventListener('click', async () => {
         if (redditContainer.style.display === 'none') {
@@ -361,6 +374,72 @@ function createGameCard(game) {
             toggleBtn.textContent = 'Show Reddit Comments';
         }
     });
+
+    // Parse Reddit URL
+    function parseRedditUrl(url) {
+        const match = url.match(/reddit\.com\/r\/(\w+)\/comments\/([a-zA-Z0-9]+)/);
+        if (match) return { subreddit: match[1], id: match[2] };
+        return null;
+    }
+
+    // Load preview automatically
+    async function loadPreview() {
+        const thread = await searchRedditGameThread(awayAbbrev, homeAbbrev, isNBA ? 'NBA' : 'NHL');
+        if (thread) {
+            currentThread = thread;
+            const comments = await fetchRedditComments(thread.subreddit, thread.id);
+            if (comments && comments.length > 0) {
+                const previewComments = comments.slice(0, 2);
+                let html = '<div class="preview-header">💬 Latest Comments</div>';
+                previewComments.forEach(comment => {
+                    const shortBody = comment.body.length > 100 ? comment.body.substring(0, 100) + '...' : comment.body;
+                    html += `<div class="preview-comment">
+                        <div class="comment-meta">
+                            <span class="comment-author">${comment.author}</span>
+                            <span class="comment-score">↑ ${comment.score}</span>
+                        </div>
+                        <div class="comment-preview-body">${escapeHtml(shortBody)}</div>
+                    </div>`;
+                });
+                previewContainer.innerHTML = html;
+                previewContainer.style.display = 'block';
+            }
+        }
+    }
+
+    // Manual thread URL loading
+    loadThreadBtn.addEventListener('click', async () => {
+        const url = threadUrlInput.value.trim();
+        if (!url) return;
+        const parsed = parseRedditUrl(url);
+        if (parsed) {
+            loadThreadBtn.textContent = 'Loading...';
+            loadThreadBtn.disabled = true;
+            try {
+                const response = await fetch(`/api/reddit/r/${parsed.subreddit}/comments/${parsed.id}.json?limit=1`);
+                const data = await response.json();
+                const title = data[0].data.children[0].data.title;
+                currentThread = { id: parsed.id, title: title, url: url, subreddit: parsed.subreddit };
+                previewContainer.innerHTML = '<div class="preview-header">✓ Custom thread loaded</div>';
+                previewContainer.style.display = 'block';
+                commentsLoaded = false;
+                redditContainer.style.display = 'none';
+                toggleBtn.textContent = 'Show All Comments';
+                threadUrlInput.value = '';
+            } catch (error) {
+                previewContainer.innerHTML = '<div class="reddit-empty">Failed to load thread</div>';
+                previewContainer.style.display = 'block';
+            }
+            loadThreadBtn.textContent = 'Load';
+            loadThreadBtn.disabled = false;
+        } else {
+            previewContainer.innerHTML = '<div class="reddit-empty">Invalid Reddit URL</div>';
+            previewContainer.style.display = 'block';
+        }
+    });
+
+    // Load preview on card creation
+    setTimeout(() => loadPreview(), 1000);
 
     return card;
 }
