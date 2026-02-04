@@ -21,7 +21,11 @@ const server = http.createServer((req, res) => {
     if (req.url.startsWith('/api/')) {
         let targetUrl;
 
-        if (req.url.startsWith('/api/nba/')) {
+        if (req.url.startsWith('/api/reddit/')) {
+            // Reddit API proxy
+            const proxyPath = req.url.replace('/api/reddit/', '');
+            targetUrl = `https://www.reddit.com/${proxyPath}`;
+        } else if (req.url.startsWith('/api/nba/')) {
             const proxyPath = req.url.replace('/api/nba/', '');
             targetUrl = `https://cdn.nba.com/static/json/liveData/${proxyPath}`;
         } else {
@@ -32,7 +36,16 @@ const server = http.createServer((req, res) => {
         console.log(`Proxying to: ${targetUrl}`);
 
         const makeRequest = (url) => {
-            https.get(url, (proxyRes) => {
+            const options = {
+                headers: {}
+            };
+
+            // Reddit requires a User-Agent header
+            if (req.url.startsWith('/api/reddit/')) {
+                options.headers['User-Agent'] = 'GetBack2Game/1.0';
+            }
+
+            https.get(url, options, (proxyRes) => {
                 // Handle redirects
                 if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && proxyRes.headers.location) {
                     console.log(`Redirecting to: ${proxyRes.headers.location}`);

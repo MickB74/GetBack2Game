@@ -88,12 +88,148 @@ h1 {
     background-color: var(--card-bg);
     border-radius: var(--border-radius);
     padding: 15px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border: 1px solid #333;
+    transition: transform 0.2s;
+}
+
+.teams {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 15px;
-    border: 1px solid #333;
-    transition: transform 0.2s;
+}
+
+.vs {
+    text-align: center;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.game-status {
+    text-align: center;
+    padding: 8px 0;
+}
+
+/* Reddit Styles */
+.reddit-toggle-btn {
+    background: #2d2d2d;
+    border: 1px solid #444;
+    color: var(--text-primary);
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+}
+
+.reddit-toggle-btn:hover {
+    background: #3d3d3d;
+    border-color: #FF4500;
+    color: #FF4500;
+}
+
+.reddit-container {
+    border-top: 1px solid #333;
+    padding-top: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.reddit-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 20px;
+    font-style: italic;
+}
+
+.reddit-thread-title {
+    font-weight: 600;
+    color: #FF4500;
+    margin-bottom: 12px;
+    font-size: 0.95em;
+    padding: 8px 12px;
+    background: rgba(255, 69, 0, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #FF4500;
+}
+
+.reddit-comments {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.reddit-comment {
+    background: #252525;
+    border-radius: 8px;
+    padding: 12px;
+    border-left: 3px solid #444;
+    transition: border-color 0.2s;
+}
+
+.reddit-comment:hover {
+    border-left-color: #FF4500;
+}
+
+.comment-header {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+.comment-author {
+    color: #4A9EFF;
+    font-weight: 600;
+}
+
+.comment-score {
+    color: #FF8B60;
+    font-weight: 600;
+}
+
+.comment-time {
+    color: var(--text-secondary);
+}
+
+.comment-body {
+    color: var(--text-primary);
+    font-size: 0.9em;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.reddit-empty {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 20px;
+    font-style: italic;
+}
+
+.reddit-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #333;
+    text-align: center;
+}
+
+.reddit-footer a {
+    color: #FF4500;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: color 0.2s;
+}
+
+.reddit-footer a:hover {
+    color: #FF6A33;
+    text-decoration: underline;
 }
 
 .game-card:hover {

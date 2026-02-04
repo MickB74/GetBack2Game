@@ -31,6 +31,111 @@ async function fetchNBAGames() {
     }
 }
 
+// Reddit API Functions
+async function searchRedditGameThread(teamAbbrev1, teamAbbrev2, sport = 'NHL') {
+    try {
+        const subreddit = sport === 'NBA' ? 'nba' : 'hockey';
+        const today = new Date();
+        const searchQuery = `Game Thread ${teamAbbrev1} ${teamAbbrev2}`;
+
+        const url = `/api/reddit/r/${subreddit}/search.json?q=${encodeURIComponent(searchQuery)}&sort=new&restrict_sr=on&t=day&limit=10`;
+        const response = await fetch(url);
+
+        if (!response.ok) return null;
+        const data = await response.json();
+
+        // Find the most relevant game thread
+        if (data.data && data.data.children && data.data.children.length > 0) {
+            const thread = data.data.children.find(post => {
+                const title = post.data.title.toLowerCase();
+                return title.includes('game thread') &&
+                    (title.includes(teamAbbrev1.toLowerCase()) || title.includes(teamAbbrev2.toLowerCase()));
+            });
+
+            if (thread) {
+                return {
+                    id: thread.data.id,
+                    title: thread.data.title,
+                    url: `https://www.reddit.com${thread.data.permalink}`,
+                    subreddit: thread.data.subreddit
+                };
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Error searching Reddit:', error);
+        return null;
+    }
+}
+
+async function fetchRedditComments(subreddit, postId) {
+    try {
+        const url = `/api/reddit/r/${subreddit}/comments/${postId}.json?limit=15`;
+        const response = await fetch(url);
+
+        if (!response.ok) return [];
+        const data = await response.json();
+
+        // Reddit returns [post_data, comments_data]
+        if (data.length > 1 && data[1].data && data[1].data.children) {
+            return data[1].data.children
+                .filter(c => c.kind === 't1' && c.data.body) // Filter actual comments
+                .slice(0, 10) // Top 10 comments
+                .map(comment => ({
+                    author: comment.data.author,
+                    body: comment.data.body,
+                    score: comment.data.score,
+                    created: comment.data.created_utc
+                }));
+        }
+        return [];
+    } catch (error) {
+        console.error('Error fetching Reddit comments:', error);
+        return [];
+    }
+}
+
+function formatTimeAgo(unixTimestamp) {
+    const seconds = Math.floor(Date.now() / 1000 - unixTimestamp);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+}
+
+function renderRedditComments(comments, threadUrl) {
+    if (!comments || comments.length === 0) {
+        return '<div class="reddit-empty">No comments found</div>';
+    }
+
+    let html = '<div class="reddit-comments">';
+    comments.forEach(comment => {
+        html += `
+            <div class="reddit-comment">
+                <div class="comment-header">
+                    <span class="comment-author">${comment.author}</span>
+                    <span class="comment-score">↑ ${comment.score}</span>
+                    <span class="comment-time">${formatTimeAgo(comment.created)}</span>
+                </div>
+                <div class="comment-body">${escapeHtml(comment.body).substring(0, 300)}${comment.body.length > 300 ? '...' : ''}</div>
+            </div>
+        `;
+    });
+    html += `<div class="reddit-footer"><a href="${threadUrl}" target="_blank" rel="noopener">View full thread on Reddit →</a></div>`;
+    html += '</div>';
+    return html;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
 // Helper: Format Time HH:MM AM/PM
 function formatTime(isoString) {
     if (!isoString) return '';
@@ -220,7 +325,43 @@ function createGameCard(game) {
             <div class="${status.class}">${status.text}</div>
             ${status.detail ? `<div class="clock-detail">${status.detail}</div>` : ''}
         </div>
+        <button class="reddit-toggle-btn">Show Reddit Comments</button>
+        <div class="reddit-container" style="display: none;">
+            <div class="reddit-loading">Loading comments...</div>
+        </div>
     `;
+
+    // Add Reddit toggle functionality
+    const toggleBtn = card.querySelector('.reddit-toggle-btn');
+    const redditContainer = card.querySelector('.reddit-container');
+    let commentsLoaded = false;
+
+    toggleBtn.addEventListener('click', async () => {
+        if (redditContainer.style.display === 'none') {
+            redditContainer.style.display = 'block';
+            toggleBtn.textContent = 'Hide Reddit Comments';
+
+            if (!commentsLoaded) {
+                // Load comments
+                const thread = await searchRedditGameThread(awayAbbrev, homeAbbrev, isNBA ? 'NBA' : 'NHL');
+
+                if (thread) {
+                    const comments = await fetchRedditComments(thread.subreddit, thread.id);
+                    redditContainer.innerHTML = `
+                        <div class="reddit-thread-title">${escapeHtml(thread.title)}</div>
+                        ${renderRedditComments(comments, thread.url)}
+                    `;
+                } else {
+                    redditContainer.innerHTML = '<div class="reddit-empty">No game thread found yet</div>';
+                }
+                commentsLoaded = true;
+            }
+        } else {
+            redditContainer.style.display = 'none';
+            toggleBtn.textContent = 'Show Reddit Comments';
+        }
+    });
+
     return card;
 }
 
